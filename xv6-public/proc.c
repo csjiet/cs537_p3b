@@ -547,14 +547,14 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
-    kfree(np->kstack); // Free the page of physical memory passed as a pointer to the parameter
-    np->kstack = 0; // kstack: char*, Bottom of kernel stack for this process
+    kfree(np->kstack); // kalloc.c, Free the page of physical memory passed as a pointer to the parameter
+    np->kstack = 0; // proc.h, kstack: char*, Bottom of kernel stack for this process
     np->state = UNUSED;
     return -1;
   }
   np->sz = curproc->sz;
   np->parent = curproc;
-  *np->tf = *curproc->tf; // tf: trapframe*, Trap frame for current syscall
+  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0; // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
