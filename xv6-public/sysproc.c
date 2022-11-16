@@ -77,6 +77,16 @@ sys_sleep(void)
   return 0;
 }
 
+int
+sys_clone(void)
+{
+  return 0;
+}
+
+int sys_join(void)
+{
+  return 0;
+}
 // return how many clock tick interrupts have occurred
 // since start.
 int
