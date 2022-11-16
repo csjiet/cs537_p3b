@@ -115,15 +115,15 @@ int thread_join(){
   return -1;
 }
 
-void lock_init(lock_t *){
+void lock_init(lock_t * mutex){
 
 }
 
-void lock_acquire(lock_t *){
+void lock_acquire(lock_t * mutex){
 
 }
 
-void lock_release(lock_t *){
+void lock_release(lock_t * mutex){
 
 }
 
