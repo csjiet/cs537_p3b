@@ -532,3 +532,11 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
+  return -1;
+}
+
+
+
+
