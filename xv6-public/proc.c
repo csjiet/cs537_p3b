@@ -536,7 +536,7 @@ procdump(void)
 // Creates a new kernel thread which shares the calling process's address space
 // This function should mimic fork() function with some tweaks
 int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
-    int i, pid;
+  int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
 
@@ -547,32 +547,32 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
-    kfree(np->kstack);
-    np->kstack = 0;
+    kfree(np->kstack); // Free the page of physical memory passed as a pointer to the parameter
+    np->kstack = 0; // kstack: char*, Bottom of kernel stack for this process
     np->state = UNUSED;
     return -1;
   }
   np->sz = curproc->sz;
   np->parent = curproc;
-  *np->tf = *curproc->tf;
+  *np->tf = *curproc->tf; // tf: trapframe*, Trap frame for current syscall
 
   // Clear %eax so that fork returns 0 in the child.
-  np->tf->eax = 0;
+  np->tf->eax = 0; // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
-      np->ofile[i] = filedup(curproc->ofile[i]);
-  np->cwd = idup(curproc->cwd);
+      np->ofile[i] = filedup(curproc->ofile[i]); // file.c, increment ref count for a file passed in as a file* argument
+  np->cwd = idup(curproc->cwd); // fs.c, increment reference count for ip. Returns ip
 
-  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+  safestrcpy(np->name, curproc->name, sizeof(curproc->name));// string.c, like strncpy but guarenteed to NUL-terminate
 
   pid = np->pid;
 
-  acquire(&ptable.lock);
+  acquire(&ptable.lock); // spinlock.c, acquire the lock, loops until the lock acquired, holding a lock for a long time may cause other CPUs to waste time spinning to acquire it.
 
   np->state = RUNNABLE;
 
-  release(&ptable.lock);
+  release(&ptable.lock); // spinlock.c, release the lock
 
   return pid;
 }
