@@ -558,17 +558,19 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   np -> pgdir = curproc -> pgdir; 
   np -> sz = curproc -> sz;
   np -> parent = curproc;
-  *np -> tf = *curproc -> tf;
 
 
   // Build a new stack
   uint* stackPtr = (uint*)((uint) stack + PGSIZE); // Stack starts from the highest stack address because it grows negatively
   stackPtr--;
   *stackPtr = (uint)arg1;
+
   stackPtr--;
   *stackPtr = (uint)arg2;
+
   stackPtr--;
   *stackPtr = 0xffffffff;
+
   *stackPtr -= 12; // Since xv6 is 32 bit vas; 4 bit for each void*; 12 bytes for 3 addresses
 
   // // Copy process state from proc.
@@ -582,8 +584,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   
   // np->sz = curproc->sz;
   // np->parent = curproc;
-  // *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
-  
+  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0; // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
