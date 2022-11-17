@@ -627,7 +627,6 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 
   release(&ptable.lock); // spinlock.c, release the lock
 
-  //cprintf("%d\n", pid);
   return pid;
 
 }
