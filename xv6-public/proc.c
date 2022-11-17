@@ -578,8 +578,36 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 }
 
 int join(void **stack){
-
-  return -1;
+  struct proc *p;
+  int pid, child;
+  struct proc *currproc = myproc();
+  acquire(&ptable.lock);
+  for (;;) {
+    child = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if (p->parent != currproc) {
+        continue;
+      }
+      child = 1;
+      if (p->state == ZOMBIE) {
+        pid = p->pid;
+        stack = p->stack;
+        // FREE EVERYTHING
+        p->pid = 0;
+        p->parent = 0;
+        p->state = UNUSED;
+        p->killed = 0;
+        p->stack = 0;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+    if(!child || currproc->killed) {
+      release(&ptable.lock);
+      return -1;
+    }
+    sleep(currproc, &ptable.lock);
+  }
 }
 
 
