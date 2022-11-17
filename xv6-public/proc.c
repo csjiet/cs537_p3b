@@ -540,21 +540,50 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   struct proc *np;
   struct proc *curproc = myproc();
 
+  // Argument checks
+  // Check if stack is page aligned
+  if((uint)stack % PGSIZE != 0)
+    return -1;
+
+  // Check if stack is 1 page in size, taking start address of allocated struc - start address of stack
+  if(curproc->sz - (uint)stack < PGSIZE)
+    return -1;
+
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
   }
 
-  // Copy process state from proc.
-  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
-    kfree(np->kstack); // kalloc.c, Free the page of physical memory passed as a pointer to the parameter
-    np->kstack = 0; // proc.h, kstack: char*, Bottom of kernel stack for this process
-    np->state = UNUSED;
-    return -1;
-  }
-  np->sz = curproc->sz;
-  np->parent = curproc;
-  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
+  // Assign the new thread's page directory to be the same as the parent's
+  np -> pgdir = curproc -> pgdir; 
+  np -> sz = curproc -> sz;
+  np -> parent = curproc;
+  *np -> tf = *curproc -> tf;
+
+
+  // Build a new stack
+  uint* stackPtr = (uint*)((uint) stack + PGSIZE); // Stack starts from the highest stack address because it grows negatively
+  stackPtr--;
+  *stackPtr = (uint)arg1;
+  stackPtr--;
+  *stackPtr = (uint)arg2;
+  stackPtr--;
+  *stackPtr = 0xffffffff;
+  *stackPtr -= 12; // Since xv6 is 32 bit vas; 4 bit for each void*; 12 bytes for 3 addresses
+
+  // // Copy process state from proc.
+  // if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
+  //   kfree(np->kstack); // kalloc.c, Free the page of physical memory passed as a pointer to the parameter
+  //   np->kstack = 0; // proc.h, kstack: char*, Bottom of kernel stack for this process
+  //   np->state = UNUSED;
+  //   return -1;
+  // }
+
+  
+  // np->sz = curproc->sz;
+  // np->parent = curproc;
+  // *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
+  
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0; // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
@@ -575,6 +604,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   release(&ptable.lock); // spinlock.c, release the lock
 
   return pid;
+
 }
 
 int join(void **stack){
