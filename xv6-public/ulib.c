@@ -121,16 +121,14 @@ int thread_join(){
   return x;
 }
 
-void lock_init(lock_t * mutex){
+void lock_init(lock_t *spin){
 
 }
 
-void lock_acquire(lock_t * mutex){
+void lock_acquire(lock_t *spin){
 
 }
 
-void lock_release(lock_t * mutex){
+void lock_release(lock_t *spin){
 
 }
-
-
