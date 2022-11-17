@@ -580,14 +580,17 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   //   np->state = UNUSED;
   //   return -1;
   // }
-
   
   // np->sz = curproc->sz;
   // np->parent = curproc;
   *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
 
-  // Clear %eax so that fork returns 0 in the child.
-  np->tf->eax = 0; // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
+  
+  // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
+  np->tf->eax = 0; // Clear %eax so that fork returns 0 in the child.
+  np->tf->esp = (uint) stackPtr;
+  np->tf->eip = (uint) fcn;
+  np->stack = stack;
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
