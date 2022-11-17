@@ -111,8 +111,14 @@ int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2)
 }
 
 int thread_join(){
-
-  return -1;
+  void *stack; //Get stack as void*
+  int x = join(&stack); //Get join results with **stack
+  if (x < 0) {
+    return -1;
+  }
+  //Free stack
+  free(stack);
+  return x;
 }
 
 void lock_init(lock_t * mutex){
