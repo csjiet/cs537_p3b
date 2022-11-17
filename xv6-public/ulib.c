@@ -122,13 +122,14 @@ int thread_join(){
 }
 
 void lock_init(lock_t *spin){
-
+  spin->locked = 0;
 }
 
 void lock_acquire(lock_t *spin){
-
+  while(xchg(&spin->locked, 1) != 0);
 }
 
 void lock_release(lock_t *spin){
-
+  xchg(&spin->locked, 0);
+  //OR  asm volatile("movl $0, %0" : "+m" (spin->locked) : );
 }
