@@ -267,6 +267,19 @@ exit(void)
   panic("zombie exit");
 }
 
+// Check if child process (thread) does not share the address space with this process
+int
+is_same_address_space(struct proc* thread){
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p != thread && p->pgdir == thread->pgdir){
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
@@ -281,7 +294,7 @@ wait(void)
     // Scan through table looking for exited children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != curproc)
+      if(p->parent != curproc || p->pgdir == curproc->pgdir) // Added line to work for threads
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
@@ -289,7 +302,13 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+
+        if(is_same_address_space(p) == 0){
+          freevm(p->pgdir);
+        }
+
+        p->pgdir = 0;
+
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
@@ -545,7 +564,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   if((uint)stack % PGSIZE != 0)
     return -1;
 
-  // Check if stack is 1 page in size, taking start address of allocated struc - start address of stack
+  // // Check if stack is 1 page in size, taking start address of allocated struc - start address of stack
   if(curproc->sz - (uint)stack < PGSIZE)
     return -1;
 
@@ -558,20 +577,20 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   np -> pgdir = curproc -> pgdir; 
   np -> sz = curproc -> sz;
   np -> parent = curproc;
+  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
 
 
   // Build a new stack
   uint* stackPtr = (uint*)((uint) stack + PGSIZE); // Stack starts from the highest stack address because it grows negatively
-  stackPtr--;
+
+  stackPtr-=sizeof(uint); // Since xv6 is 32 bit vas; 4 bit for each void*;
   *stackPtr = (uint)arg1;
 
-  stackPtr--;
+  stackPtr-=sizeof(uint); // Since xv6 is 32 bit vas; 4 bit for each void*;
   *stackPtr = (uint)arg2;
 
-  stackPtr--;
+  stackPtr-=sizeof(uint); // Since xv6 is 32 bit vas; 4 bit for each void*; 
   *stackPtr = 0xffffffff;
-
-  *stackPtr -= 12; // Since xv6 is 32 bit vas; 4 bit for each void*; 12 bytes for 3 addresses
 
   // // Copy process state from proc.
   // if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -583,13 +602,14 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   
   // np->sz = curproc->sz;
   // np->parent = curproc;
-  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
+
 
   
   // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
   np->tf->eax = 0; // Clear %eax so that fork returns 0 in the child.
   np->tf->esp = (uint) stackPtr;
-  np->tf->eip = (uint) fcn;
+  np->tf->eip = (uint) fcn; // instruction to the function reference
+  np->tf->ebp = np->tf->esp; // set to esp at the start of the function
   np->stack = stack;
 
   for(i = 0; i < NOFILE; i++)
@@ -607,6 +627,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 
   release(&ptable.lock); // spinlock.c, release the lock
 
+  //cprintf("%d\n", pid);
   return pid;
 
 }

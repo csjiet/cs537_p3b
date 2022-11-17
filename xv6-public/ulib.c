@@ -3,6 +3,7 @@
 #include "fcntl.h"
 #include "user.h"
 #include "x86.h"
+#include "mmu.h"
 
 
 char*
@@ -107,7 +108,10 @@ memmove(void *vdst, const void *vsrc, int n)
 }
 
 int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2){
-  return -1;
+
+  void* stack = malloc(PGSIZE);
+
+  return clone(start_routine, arg1, arg2, stack);
 }
 
 int thread_join(){
@@ -127,6 +131,7 @@ void lock_init(lock_t *spin){
 
 void lock_acquire(lock_t *spin){
   while(xchg(&spin->locked, 1) != 0);
+
 }
 
 void lock_release(lock_t *spin){
