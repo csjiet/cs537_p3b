@@ -639,7 +639,7 @@ int join(void **stack){
   for (;;) {
     child = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if (p->parent != currproc) {
+      if (p->parent != currproc || p->pgdir != currproc-> pgdir) {
         continue;
       }
       child = 1;
@@ -647,9 +647,12 @@ int join(void **stack){
         pid = p->pid;
         stack = p->stack;
         // FREE EVERYTHING
+        kfree(p ->kstack);
+        p ->kstack = 0;
         p->pid = 0;
         p->parent = 0;
         p->state = UNUSED;
+        p->name[0] = 0;
         p->killed = 0;
         p->stack = 0;
         release(&ptable.lock);
@@ -662,7 +665,7 @@ int join(void **stack){
     }
     sleep(currproc, &ptable.lock);
   }
- return -1;
+ 
 }
 
 
