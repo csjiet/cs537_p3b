@@ -273,7 +273,7 @@ is_same_address_space(struct proc* thread){
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p != thread && p->pgdir == thread->pgdir){
-      return -1;
+      return 1;
     }
   }
 
@@ -645,7 +645,7 @@ int join(void **stack){
       child = 1;
       if (p->state == ZOMBIE) {
         pid = p->pid;
-        stack = p->stack;
+        *stack = p->stack;
         // FREE EVERYTHING
         kfree(p ->kstack);
         p ->kstack = 0;
