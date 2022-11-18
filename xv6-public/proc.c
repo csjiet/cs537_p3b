@@ -574,6 +574,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   np -> pgdir = curproc -> pgdir; // Assign the new thread's page directory to be the same as the parent's
   np -> sz = curproc -> sz;
   np -> parent = curproc;
+  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
   
 
 
@@ -581,13 +582,13 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   uint* stackPtr = (uint*)((stack) + PGSIZE); // Stack starts from the highest stack address because it grows negatively
 
   stackPtr--; // Since xv6 is 32 bit vas; 4 bit for each void*;
-  *(stackPtr) = 0xffffffff;
- 
+   *(stackPtr) = (uint)arg2;
+
   stackPtr--; // Since xv6 is 32 bit vas; 4 bit for each void*;
   *(stackPtr) = (uint)arg1;
 
   stackPtr--; // Since xv6 is 32 bit vas; 4 bit for each void*;
-   *(stackPtr) = (uint)arg2;
+  *(stackPtr) = 0xffffffff;
 
   // // Copy process state from proc.
   // if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -608,7 +609,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   np->tf->ebp = np->tf->esp; // set to esp at the start of the function
   np->stack = stack;
 
-  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
+  
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
@@ -630,7 +631,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 }
 
 int join(void **stack){
-  /*
+  
   struct proc *p;
   int pid, child;
   struct proc *currproc = myproc();
@@ -661,7 +662,6 @@ int join(void **stack){
     }
     sleep(currproc, &ptable.lock);
   }
-  */
  return -1;
 }
 

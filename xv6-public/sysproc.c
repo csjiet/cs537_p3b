@@ -80,12 +80,23 @@ sys_sleep(void)
 int
 sys_clone(void)
 {
-  return 0;
+  void(*fcn)(void *, void *);
+  void *arg1, *arg2, *stackPtr;
+  if(argptr(0, (void*)&fcn, sizeof(void*)) < 0 || argptr(1, (void*)&arg1,sizeof(void*)) < 0 || argptr(2, (void*)&arg2, sizeof(void*)) < 0 || argptr(3, (void*)&stackPtr, PGSIZE) < 0)
+    return -1;
+
+  return clone(fcn, arg1, arg2, stackPtr);
+
 }
 
 int sys_join(void)
 {
-  return 0;
+  void** stackPtr;
+  if(argptr(0, (void*)&stackPtr, PGSIZE) < 0)
+    return -1;
+
+  return join(stackPtr);
+
 }
 // return how many clock tick interrupts have occurred
 // since start.
