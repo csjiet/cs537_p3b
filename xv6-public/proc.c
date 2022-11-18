@@ -561,36 +561,33 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 
   // Argument checks
   // Check if stack is page aligned
+  
   if((uint)stack % PGSIZE != 0)
     return -1;
-
-  // // Check if stack is 1 page in size, taking start address of allocated struc - start address of stack
-  if(curproc->sz - (uint)stack < PGSIZE)
-    return -1;
-
+  
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
   }
 
-  // Assign the new thread's page directory to be the same as the parent's
-  np -> pgdir = curproc -> pgdir; 
+  
+  np -> pgdir = curproc -> pgdir; // Assign the new thread's page directory to be the same as the parent's
   np -> sz = curproc -> sz;
   np -> parent = curproc;
-  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
+  
 
 
   // Build a new stack
-  uint* stackPtr = (uint*)((uint) stack + PGSIZE); // Stack starts from the highest stack address because it grows negatively
+  uint* stackPtr = (uint*)((stack) + PGSIZE); // Stack starts from the highest stack address because it grows negatively
 
-  stackPtr-=sizeof(uint); // Since xv6 is 32 bit vas; 4 bit for each void*;
-  *stackPtr = (uint)arg1;
+  stackPtr--; // Since xv6 is 32 bit vas; 4 bit for each void*;
+  *(stackPtr) = 0xffffffff;
+ 
+  stackPtr--; // Since xv6 is 32 bit vas; 4 bit for each void*;
+  *(stackPtr) = (uint)arg1;
 
-  stackPtr-=sizeof(uint); // Since xv6 is 32 bit vas; 4 bit for each void*;
-  *stackPtr = (uint)arg2;
-
-  stackPtr-=sizeof(uint); // Since xv6 is 32 bit vas; 4 bit for each void*; 
-  *stackPtr = 0xffffffff;
+  stackPtr--; // Since xv6 is 32 bit vas; 4 bit for each void*;
+   *(stackPtr) = (uint)arg2;
 
   // // Copy process state from proc.
   // if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -603,7 +600,6 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   // np->sz = curproc->sz;
   // np->parent = curproc;
 
-
   
   // x86.h changes a variable in trap frame built on the stack by the hardware and by trapasm.S
   np->tf->eax = 0; // Clear %eax so that fork returns 0 in the child.
@@ -611,6 +607,8 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   np->tf->eip = (uint) fcn; // instruction to the function reference
   np->tf->ebp = np->tf->esp; // set to esp at the start of the function
   np->stack = stack;
+
+  *np->tf = *curproc->tf; // proc.h, tf: trapframe*, Trap frame for current syscall
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
@@ -632,6 +630,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
 }
 
 int join(void **stack){
+  /*
   struct proc *p;
   int pid, child;
   struct proc *currproc = myproc();
@@ -662,6 +661,8 @@ int join(void **stack){
     }
     sleep(currproc, &ptable.lock);
   }
+  */
+ return -1;
 }
 
 
