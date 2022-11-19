@@ -579,6 +579,7 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
     return -1;
   }
 
+
   
   np -> pgdir = curproc -> pgdir; // Assign the new thread's page directory to be the same as the parent's
   np -> sz = curproc -> sz;

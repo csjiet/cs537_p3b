@@ -110,6 +110,9 @@ memmove(void *vdst, const void *vsrc, int n)
 int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2){
 
   void* stack = malloc(PGSIZE);
+  if ((uint)stack%PGSIZE){
+    stack = (void*)((uint)stack + (PGSIZE - ((uint)stack % PGSIZE)));
+  } 
 
   return clone(start_routine, arg1, arg2, stack);
 }
